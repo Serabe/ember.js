@@ -119,29 +119,25 @@ function extractPositionalParams(renderNode, component, params, attrs) {
 }
 
 function processPositionalParams(renderNode, positionalParams, params, attrs) {
-  // if the component is rendered via {{component}} helper, the first
-  // element of `params` is the name of the component, so we need to
-  // skip that when the positional parameters are constructed
-  const paramsStartIndex = renderNode.getState().isComponentHelper ? 1 : 0;
   const isNamed = typeof positionalParams === 'string';
   let paramsStream;
 
   if (isNamed) {
     paramsStream = new Stream(() => {
-      return readArray(params.slice(paramsStartIndex));
+      return readArray(params);
     }, 'params');
 
     attrs[positionalParams] = paramsStream;
   }
 
   if (isNamed) {
-    for (let i = paramsStartIndex; i < params.length; i++) {
+    for (let i = 0; i < params.length; i++) {
       let param = params[i];
       paramsStream.addDependency(param);
     }
   } else {
     for (let i = 0; i < positionalParams.length; i++) {
-      let param = params[paramsStartIndex + i];
+      let param = params[i];
       attrs[positionalParams[i]] = param;
     }
   }
