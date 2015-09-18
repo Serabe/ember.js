@@ -1,9 +1,9 @@
 import assign from 'ember-metal/assign';
 import {
-  COMPONENT_CELL,
   COMPONENT_PATH,
   COMPONENT_POSITIONAL_PARAMS,
   COMPONENT_HASH,
+  isComponentCell,
   mergeHash,
 } from  './closure-component';
 import { processPositionalParams } from 'ember-htmlbars/utils/extract-positional-params';
@@ -37,7 +37,7 @@ export default {
 
 function getComponentPath(param, env) {
   let path = env.hooks.getValue(param);
-  if (path && path[COMPONENT_CELL]) {
+  if (isComponentCell(path)) {
     path = path[COMPONENT_PATH];
   }
   return path;
@@ -48,20 +48,22 @@ function render(morph, env, scope, [path, ...params], hash, template, inverse, v
     componentPath
   } = morph.getState();
 
-  path = env.hooks.getValue(path);
-
-  if (path && path[COMPONENT_CELL]) {
-    let closureComponent = env.hooks.getValue(path);
-    let positionalParams = closureComponent[COMPONENT_POSITIONAL_PARAMS];
-    processPositionalParams(null, positionalParams, params, hash);
-    params = [];
-    hash = mergeHash(closureComponent[COMPONENT_HASH], hash);
-  }
-
   // If the value passed to the {{component}} helper is undefined or null,
   // don't create a new ComponentNode.
   if (componentPath === undefined || componentPath === null) {
     return;
+  }
+
+  path = env.hooks.getValue(path);
+
+  if (isComponentCell(path)) {
+    let closureComponent = env.hooks.getValue(path);
+    let positionalParams = closureComponent[COMPONENT_POSITIONAL_PARAMS];
+
+    // This needs to be done in each nesting level to avoid raising assertions
+    processPositionalParams(null, positionalParams, params, hash);
+    params = [];
+    hash = mergeHash(closureComponent[COMPONENT_HASH], hash);
   }
 
   let templates = { default: template, inverse };

@@ -48,34 +48,50 @@ export default function closureComponent(env, [path, ...params], hash) {
 
 function createClosureComponentCell(env, originalComponentPath, params, hash) {
   let componentPath = read(originalComponentPath);
-  let val;
 
-  if (componentPath && componentPath[COMPONENT_CELL]) {
-    let positionalParams = componentPath[COMPONENT_POSITIONAL_PARAMS];
-    processPositionalParams(null, positionalParams, params, hash);
-
-    val = {
-      [COMPONENT_PATH]: componentPath[COMPONENT_PATH],
-      [COMPONENT_HASH]: mergeHash(componentPath[COMPONENT_HASH], hash),
-      [COMPONENT_POSITIONAL_PARAMS]: positionalParams,
-      [COMPONENT_CELL]: true
-    };
+  if (isComponentCell(componentPath)) {
+    return createNestedClosureComponentCell(componentPath, params, hash);
   } else {
-    let positionalParams = getPositionalParams(env.container, componentPath);
-    if (positionalParams) {
-      processPositionalParams(null, positionalParams, params, hash);
-    }
-    val = {
-      [COMPONENT_PATH]: componentPath,
-      [COMPONENT_HASH]: hash,
-      [COMPONENT_POSITIONAL_PARAMS]: positionalParams,
-      [COMPONENT_CELL]: true
-    };
+    return createNewClosureComponentCell(env, componentPath, params, hash);
   }
-
-  return val;
 }
 
+export function isComponentCell(component) {
+  return component && component[COMPONENT_CELL];
+}
+
+function createNestedClosureComponentCell(componentCell, params, hash) {
+  let positionalParams = componentCell[COMPONENT_POSITIONAL_PARAMS];
+
+  // This needs to be done in each nesting level to avoid raising assertions
+  processPositionalParams(null, positionalParams, params, hash);
+
+  return {
+    [COMPONENT_PATH]: componentCell[COMPONENT_PATH],
+    [COMPONENT_HASH]: mergeHash(componentCell[COMPONENT_HASH], hash),
+    [COMPONENT_POSITIONAL_PARAMS]: positionalParams,
+    [COMPONENT_CELL]: true
+  };
+}
+
+function createNewClosureComponentCell(env, componentPath, params, hash) {
+  let positionalParams = getPositionalParams(env.container, componentPath);
+
+  // This needs to be done in each nesting level to avoid raising assertions
+  processPositionalParams(null, positionalParams, params, hash);
+
+  return {
+    [COMPONENT_PATH]: componentPath,
+    [COMPONENT_HASH]: hash,
+    [COMPONENT_POSITIONAL_PARAMS]: positionalParams,
+    [COMPONENT_CELL]: true
+  };
+}
+
+/*
+ Returns the positional parameters for component `componentPath`.
+ If it has no positional parameters, it returns the empty array.
+ */
 function getPositionalParams(container, componentPath) {
   if (!componentPath) { return []; }
   let result = lookupComponent(container, componentPath);
@@ -85,18 +101,6 @@ function getPositionalParams(container, componentPath) {
     return component.positionalParams;
   } else {
     return [];
-  }
-}
-
-export function mergeParams(original, update) {
-  // If update has the same or more items than original, we can just return the
-  // update
-  if (update.length >= original.length) {
-    return update;
-  } else {
-    let result = update.slice(0);
-    result.push(...original.slice(update.length));
-    return result;
   }
 }
 
