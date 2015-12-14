@@ -25,10 +25,9 @@ function processNamedPositionalParameters(renderNode, positionalParams, params, 
 
   for (let i = 0; i < limit; i++) {
     let param = params[i];
-    let isActiveStreamParam = isStream(param) && param.isActive;
 
     assert(`You cannot specify both a positional param (at position ${i}) and the hash argument \`${positionalParams[i]}\`.`,
-           isActiveStreamParam || !(positionalParams[i] in attrs));
+           !(positionalParams[i] in attrs));
 
     attrs[positionalParams[i]] = param;
   }

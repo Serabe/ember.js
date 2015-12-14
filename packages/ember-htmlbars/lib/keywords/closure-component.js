@@ -12,6 +12,7 @@ import { labelForSubexpr } from 'ember-htmlbars/hooks/subexpr';
 import assign from 'ember-metal/assign';
 import { processPositionalParams } from 'ember-htmlbars/utils/extract-positional-params';
 import lookupComponent from 'ember-htmlbars/utils/lookup-component';
+import EmptyObject from 'ember-metal/empty_object';
 
 export const COMPONENT_REFERENCE = symbol('COMPONENT_REFERENCE');
 export const COMPONENT_CELL = symbol('COMPONENT_CELL');
@@ -74,12 +75,14 @@ export function isComponentCell(component) {
 }
 
 function createNestedClosureComponentCell(componentCell, params, hash) {
+  let newHash = assign(new EmptyObject(), hash);
+
   // This needs to be done in each nesting level to avoid raising assertions
-  processPositionalParamsFromCell(componentCell, params, hash);
+  processPositionalParamsFromCell(componentCell, params, newHash);
 
   return {
     [COMPONENT_PATH]: componentCell[COMPONENT_PATH],
-    [COMPONENT_HASH]: mergeInNewHash(componentCell[COMPONENT_HASH], hash),
+    [COMPONENT_HASH]: mergeInNewHash(componentCell[COMPONENT_HASH], newHash),
     [COMPONENT_POSITIONAL_PARAMS]: componentCell[COMPONENT_POSITIONAL_PARAMS],
     [COMPONENT_CELL]: true
   };
@@ -94,12 +97,14 @@ export function processPositionalParamsFromCell(componentCell, params, hash) {
 function createNewClosureComponentCell(env, componentPath, params, hash) {
   let positionalParams = getPositionalParams(env.owner, componentPath);
 
+  let newHash = assign(new EmptyObject(), hash);
+
   // This needs to be done in each nesting level to avoid raising assertions
-  processPositionalParams(null, positionalParams, params, hash);
+  processPositionalParams(null, positionalParams, params, newHash);
 
   return {
     [COMPONENT_PATH]: componentPath,
-    [COMPONENT_HASH]: hash,
+    [COMPONENT_HASH]: newHash,
     [COMPONENT_POSITIONAL_PARAMS]: positionalParams,
     [COMPONENT_CELL]: true
   };
