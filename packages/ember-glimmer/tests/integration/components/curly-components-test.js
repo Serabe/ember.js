@@ -2985,4 +2985,26 @@ moduleFor('Components test: curly components', class extends RenderingTest {
 
     this.assertText('MyVar1: 1 1 MyVar2: 2 2');
   }
+
+  ['@test [GH#13748] attribute binding to aliased property propagates changes'](assert) {
+    this.registerComponent('x-alias', {
+      ComponentClass: Component.extend({
+        tagName: 'button',
+        value: null,
+        //alias: computed.alias('value'),
+        alias: computed('value', { get() { return this.get('value'); }, set(_, newValue) { return this.set('value', newValue); } }),
+        click() { this.set('value', 'Goodbye'); }
+      })
+    });
+
+    this.render(`<span>{{value}}</span>{{x-alias alias=(mut value)}}`, {
+      value: 'Hello'
+    });
+
+    this.assertText('Hello');
+
+    this.runTask(() => this.$('button').click());
+
+    this.assertText('Goodbye');
+  }
 });
